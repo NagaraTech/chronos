@@ -167,12 +167,18 @@ async fn run_node(
         let m = ZMessage::decode(msg.clone()).unwrap();
         let decoded = hex::decode(m.to.clone()).unwrap();
         let to = Arc::new(KitsuneAgent(decoded));
-        let response = sender.rpc_single(
+        let response = match sender.rpc_single(
             space.clone(),
             to.clone(),
             msg.to_vec(),
             Some(5_000),
-        ).await.unwrap();
+        ).await {
+            Ok(response) => response,
+            Err(e) => {
+                eprintln!("Failed to send rpc_single: {}", e);
+                continue;
+            }
+        };
 
         println!("Response: {:?}", String::from_utf8(response));
     }
