@@ -85,7 +85,9 @@ async fn pipe(
         while let Some(result) = ws_rx.next().await {
             match result {
                 Ok(msg) => {
-                    tx.send(msg.into_bytes()).expect("Failed to send message");
+                    if let Err(e) = tx.send(msg.into_bytes()) {
+                        eprintln!("Failed to send message: {}", e);
+                    }
                 }
                 Err(e) => {
                     eprintln!("WebSocket error: {}", e);
