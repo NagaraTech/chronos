@@ -6,7 +6,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use hex::ToHex;
 use p2p::common::{KitsuneTestHarness, RecordedKitsuneP2pEvent, start_bootstrap, start_signal_srv, TestHostOp, wait_for_connected};
 use clap::Parser;
-use futures_util::{FutureExt, SinkExt, StreamExt};
+use futures_util::{FutureExt, pin_mut, SinkExt, StreamExt};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::RwLock;
 use warp::Filter;
@@ -95,7 +95,12 @@ async fn pipe(
         }
     });
 
-    let _ = tokio::try_join!(receiver_task, sender_task);
+    pin_mut!(receiver_task, sender_task);
+
+    tokio::select! {
+        _ = receiver_task => (),
+        _ = sender_task => (),
+    }
 }
 
 async fn spawn_node_task(
